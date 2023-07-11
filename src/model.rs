@@ -1,8 +1,6 @@
 
-/* Import macros and others */
 use crate::schema::*;
 
-/* For beeing able to serialize */
 use serde::Serialize;
 
 #[derive(Debug, Queryable, Serialize)]
