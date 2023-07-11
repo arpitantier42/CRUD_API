@@ -1,48 +1,38 @@
 
-/* To be able to return Templates */
 use rocket_contrib::templates::Template;
 use std::collections::HashMap;
 
-/* Diesel query builder */
+
 use diesel::prelude::*;
 
-/* Database macros */
 use crate::schema::*;
 
-/* Database data structs (Hero, NewHero) */
 use crate::model::*;
 
-/* To be able to parse raw forms */
 use rocket::http::ContentType;
 use rocket::Data;
 use rocket_multipart_form_data::{
     MultipartFormData, MultipartFormDataField, MultipartFormDataOptions,
 };
 
-/* Flash message and redirect */
 use rocket::request::FlashMessage;
 use rocket::response::{Flash, Redirect};
 
-/* List our inserted heroes */
 #[get("/")]
 pub fn list(flash: Option<FlashMessage>) -> Template {
     let mut context = HashMap::new();
 
-    /* Get all our heroes from database */
     let my_todos: Vec<Hero> = my_todos::table
         .select(my_todos::all_columns)
         .load::<Hero>(&crate::establish_connection())
         .expect("Whoops, like this went bananas!");
 
-    /* Insert on the template rendering
-    context our new heroes vec */
     if let Some(ref msg) = flash {
         context.insert("data", (my_todos, msg.msg()));
     } else {
         context.insert("data", (my_todos, "Listing heroes..."));
     }
 
-    /* Return the template */
     Template::render("list", &context)
 }
 
@@ -57,10 +47,9 @@ pub fn new(flash: Option<FlashMessage>) -> Template {
 
 #[post("/insert", data = "<hero_data>")]
 pub fn insert(content_type: &ContentType, hero_data: Data) -> Flash<Redirect> {
-    /* File system */
+    
     use std::fs;
 
-    /* First we declare what we will be accepting on this form */
     let mut options = MultipartFormDataOptions::new();
 
     options.allowed_fields = vec![
@@ -70,7 +59,6 @@ pub fn insert(content_type: &ContentType, hero_data: Data) -> Flash<Redirect> {
         MultipartFormDataField::text("strength_level"),
     ];
 
-    /* If stuff matches, do stuff */
     let multipart_form_data = MultipartFormData::parse(content_type, hero_data, options);
 
     match multipart_form_data {
@@ -83,10 +71,8 @@ pub fn insert(content_type: &ContentType, hero_data: Data) -> Flash<Redirect> {
                     let _file_name = &file_field.file_name;
                     let _path = &file_field.path;
 
-                    /* Lets split name to get format */
                     let format: Vec<&str> = _file_name.as_ref().unwrap().split('.').collect(); /* Reparsing the fileformat */
 
-                    /* Path parsing */
                     let absolute_path: String = format!("imgs/{}", _file_name.clone().unwrap());
                     fs::copy(_path, &absolute_path).unwrap();
 
@@ -95,7 +81,6 @@ pub fn insert(content_type: &ContentType, hero_data: Data) -> Flash<Redirect> {
                 None => None,
             };
 
-            /* Insert our form data inside our database */
             let insert = diesel::insert_into(my_todos::table)
                 .values(NewHero {
                     fantasy_name: match form.texts.get("fantasy_name") {
@@ -160,7 +145,6 @@ pub fn process_update(content_type: &ContentType, hero_data: Data) -> Flash<Redi
     /* File system */
     use std::fs;
 
-    /* First we declare what we will be accepting on this form */
     let mut options = MultipartFormDataOptions::new();
 
     options.allowed_fields = vec![
@@ -171,7 +155,6 @@ pub fn process_update(content_type: &ContentType, hero_data: Data) -> Flash<Redi
         MultipartFormDataField::text("strength_level"),
     ];
 
-    /* If stuff matches, do stuff */
     let multipart_form_data = MultipartFormData::parse(content_type, hero_data, options);
 
     match multipart_form_data {
